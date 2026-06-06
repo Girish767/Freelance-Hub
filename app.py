@@ -1,0 +1,53 @@
+from flask import Flask
+from flask_cors import CORS
+from flask import request, jsonify
+from flask import send_from_directory
+# Import Blueprints
+from routes.admin.routes import admin_bp
+from routes.employee.routes import employee_bp
+from routes.employer.routes import employer_bp
+from routes.auth.routes import auth_bp
+from routes.chat.routes import chat_bp
+import os
+
+from flask_mail import Mail
+from config import MAIL_CONFIG
+from utils.mail import mail
+
+# Initialize App
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+RESOURCE_UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads", "resources")
+PROFILE_UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads", "profile")
+PROJECT_UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads", "projects")
+
+app.config.update(MAIL_CONFIG)
+
+mail.init_app(app)
+@app.route('/uploads/resources/<path:filename>')
+def serve_resource(filename):
+    return send_from_directory(RESOURCE_UPLOAD_FOLDER, filename)
+
+@app.route('/uploads/profile/<path:filename>')
+def serve_profile(filename):
+    return send_from_directory(PROFILE_UPLOAD_FOLDER, filename)
+
+@app.route('/uploads/projects/<path:filename>')
+def serve_project(filename):
+    return send_from_directory(PROJECT_UPLOAD_FOLDER, filename)
+
+# 🔹 Register Blueprints
+app.register_blueprint(auth_bp, url_prefix="/api")
+app.register_blueprint(employer_bp, url_prefix="/api/employer")
+app.register_blueprint(employee_bp, url_prefix="/api/employee")
+app.register_blueprint(admin_bp, url_prefix="/api/admin")
+app.register_blueprint(chat_bp, url_prefix="/api/chat")
+
+# Run Server
+if __name__ == "__main__":
+    print("Starting Flask App...")
+    print(app.url_map)
+    app.run(debug=True, host="0.0.0.0", port=5000, use_reloader=False)
